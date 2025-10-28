@@ -67,19 +67,19 @@ class Trip:
         self.members.pop(name)
         print(f"{name} is successfully removed.")
 
-    def list_payment(self) -> None:
+    def list_payments(self) -> None:
         if len(self.payments) == 0:
             print("No payment records found.")
             return
-        print(f"Payments for {self.trip_name}:", end=' ')
+        print(f"Payments for {self.trip_name}:")
         for payment in self.payments:
             involved_str = ", ".join(payment.involved_members) if payment.involved_members else "all"
             print(f"  #{payment.id}: {payment.payer_name} paid ${payment.amount:.2f} - {payment.description} (split: {involved_str})")
     
     
-    def search_payment(self, id: int) -> Payment:
+    def search_payment(self, payment_id: int) -> Payment:
         for payment in self.payments:
-            if id == payment.id:
+            if payment_id == payment.id:
                 return payment
             else:
                 print(f"Payment #{id} not found.")
@@ -137,7 +137,7 @@ class Trip:
         print(f'Payment #{payment_id} is successfully deleted.')
     
 
-    def calculate_balance(self):
+    def calculate_balances(self):
         '''
         Calculate how much each member should pay or recieve
         '''

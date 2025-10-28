@@ -55,8 +55,7 @@ def calculate_recursive(balances, settlements):
         'debtor': debtor['member_name'],
         'creditor': creditor['member_name'],
         'amount': amount
-    }
-    )
+    })
     return calculate_recursive(balances, settlements)
 
 def format_settlement_summary(balances, settlements) -> str:
@@ -80,12 +79,5 @@ def format_settlement_summary(balances, settlements) -> str:
             lines.append(f"{s['debtor']} → {s['creditor']}: ${s['amount']:.2f}")
     else:
         lines.append("No transactions needed - all settled!")
-    
-    lines.append("\nFinal balances (should be ~0):")
-    lines.append("-" * 50)
-    for b in balances:
-        lines.append(f"{b['member_name']}: ${b['price_to_get']:.2f}")
-    
-    lines.append("=" * 50)
     
     return "\n".join(lines)
