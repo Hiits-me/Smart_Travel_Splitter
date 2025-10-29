@@ -45,8 +45,9 @@ class Trip:
         if len(self.members) == 0:
             print("No member in this group.")
         else:
+            print('Members: ', end=' ')
             for member in self.members:
-                print(member, end=' ')
+                print(member, end=', ')
     
     def add_member(self, name:str) -> bool:
         if not isinstance(name, str):
@@ -79,11 +80,10 @@ class Trip:
     
     def search_payment(self, payment_id: int) -> Payment:
         for payment in self.payments:
-            if payment_id == payment.id:
+            if  payment.id == payment_id:
                 return payment
-            else:
-                print(f"Payment #{id} not found.")
-                return
+        print(f"Payment #{payment_id} not found.")
+        return None
     
     def add_payment(self, payer_name, amount, description="", involved_members=None) -> Payment:
         '''
@@ -104,7 +104,7 @@ class Trip:
             # validate all involved members exist
             for name in involved_members:
                 if name not in self.members:
-                    raise ValueError(f"Involved member '{name}' not found in trip")
+                    raise ValueError(f"'{name}' not found in trip")
                 # ensure the payer is in involved list
             if payer_name not in involved_members:
                 involved_members.append(payer_name)
@@ -114,19 +114,27 @@ class Trip:
         return payment
     
     
-    def edit_payment(self, payment_id: int, new_amount: float, new_description: str) -> None:
+    def edit_payment(self, payment_id: int, new_amount: float, new_description: str, new_involved_members: list = None) -> None:
         payment_to_edit = self.search_payment(payment_id)
         if payment_to_edit is None:
             return
         if new_amount is not None:
             try:
                 payment_to_edit.amount = float(new_amount)
-                print(f'Payment #{payment_id} amount is updated successfully to {new_amount:.2f}.')
+                print(f'Payment #{payment_id} amount is successfully updated.')
             except ValueError:
                 print(f"Invalid amount: {new_amount}")
         if new_description is not None:
             payment_to_edit.description = new_description
-            print(f'Payment #{payment_id} description is updated successfully to {new_description}.')
+            print(f'Payment #{payment_id} description is successfully updated.')
+        
+        if new_involved_members is not None:
+            for name in new_involved_members:
+                if name not in self.members:
+                    print(f'Error: \'{name}\' not found in trip')
+                    return
+            payment_to_edit.involved_members = new_involved_members
+            print(f"Payment #{payment_id} involved members successfully updated.")
     
 
     def delete_payment(self, payment_id: int) -> None:

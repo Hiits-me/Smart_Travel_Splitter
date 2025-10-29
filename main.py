@@ -27,7 +27,7 @@ def show_menu():
 def valid_input(prompt, input_type=str, allow_empty=False) -> str|int|float:
     while True:
         try:
-            user_input = input(prompt).capitalize().strip()
+            user_input = input(prompt).strip()
             
             if not user_input and not allow_empty:
                 print("Input cannot be empty. Please try again.")
@@ -36,12 +36,15 @@ def valid_input(prompt, input_type=str, allow_empty=False) -> str|int|float:
                 return user_input
                 
             if input_type is int:
-                if user_input <= 0:
+                if int(user_input) <= 0:
                     print("Input cannot be negative. Please input positive number.")
                     continue
-                else:
-                    return int(user_input)
+                return int(user_input)
+            
             elif input_type is float:
+                if float(user_input) <= 0:
+                    print("Input cannot be negative. Please input positive number.")
+                    continue
                 return float(user_input)
             else:
                 return user_input
@@ -54,8 +57,8 @@ def handle_add_payment(trip) -> None:
         print('No members in this group. Add a member first.\n')
         return
     payer = valid_input("Payer: ")
-    amount = valid_input("Amount: ", input_type=float)
-    description = valid_input("Description: ")
+    amount = valid_input("Amount: $", input_type=float)
+    description = valid_input("Description: ", input_type=str, allow_empty=True)
     split_choice = valid_input("Split among specific members? (y/n): ").lower()
 
     involved = None
@@ -77,16 +80,29 @@ def handle_edit_payment(trip) -> None:
     print()
 
     payment_id = valid_input("Enter payment ID to edit: ", input_type=int)
+    payment_to_edit = trip.search_payment(payment_id)
+    if payment_to_edit is None:
+        return
+    
     print("Leave blank to keep current value.")
     new_amount = input("New amount (or press Enter to skip): ").strip()
-    new_description = input("New description (or press Enter to skip): ").strip()
-
     try:
         new_amount = float(new_amount) if new_amount else None
     except ValueError:
         print('Invalid amount. Please enter number.')
     
-    trip.edit_payment(payment_id, new_amount, new_description)
+    new_description = input("New description (or press Enter to skip): ").strip()
+    edit_members_choice = valid_input("Edit involved members? (y/n): ", allow_empty=True).lower()
+    new_involved = None
+    if edit_members_choice == 'y':
+        print(f"Current members in trip: {', '.join(trip.members.keys())}")
+        print("Enter member names separated by commas:")
+        involved_input = input().strip()
+        if involved_input:
+            new_involved = [name.strip() for name in involved_input.split(',')]
+
+    
+    trip.edit_payment(payment_id, new_amount, new_description, new_involved)
     print()
 
 
@@ -105,12 +121,12 @@ def handle_settlement(trip) -> None:
     if not trip.payments:
         print("No payments recorded yet.")
         return
-    print("\n" + "=" * 50, "Calculating balances...", "=" * 50,  sep='\n')
+    print("\n" + "=" * 50, "SETTLEMENT SUMMARY", "=" * 50,  sep='\n')
 
     avg_per_person = trip.calculate_balances()
     total_spent = sum(p.amount for p in trip.payments)
 
-    print(f"\nTotal spent: ${total_spent:.2f}", f"Average per person (if all shared): ${avg_per_person:.2f}", "\nCurrent balances:", sep='\n')
+    print(f"\nTotal spent: ${total_spent:.2f}", f"Per person (if all shared): ${avg_per_person:.2f}", "\nResult:", sep='\n')
     for name, member in trip.members.items():
         if member.balance > 0.01:
             print(f"    {name}: ${member.balance:.2f} (is owed)")
@@ -119,14 +135,13 @@ def handle_settlement(trip) -> None:
         else:
             print(f"    {name}: $0.00 (settled)")
     
-    print("\n" + "=" * 50, "Calculating minimum settlements...", "=" * 50, sep='\n')
 
     balance_list = trip.get_balance_list()
     final_balances, settlements = calculate_settlements(balance_list)
 
+    print()
     print(format_settlement_summary(final_balances, settlements))
-    print(f"\nTotal transactions needed: {len(settlements)}\n")
-
+    # print(f"\nTotal transactions needed: {len(settlements)}\n")
 
 
 

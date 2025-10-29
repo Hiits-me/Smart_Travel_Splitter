@@ -69,9 +69,6 @@ def format_settlement_summary(balances, settlements) -> str:
         raise TypeError(f'settlements must be a list.')
     
     lines = []
-    lines.append('='*50)
-    lines.append('SETTLEMENT SUMMARY')
-    lines.append('='*50)
     lines.append("\nTransactions needed:")
     lines.append("-" * 50)
     if settlements:
