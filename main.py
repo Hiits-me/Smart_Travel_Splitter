@@ -1,5 +1,6 @@
 from models import Trip
 from calculator import calculate_settlements, format_settlement_summary
+import pyperclip
 
 BANNER = '''
     =========================================
@@ -121,19 +122,53 @@ def handle_settlement(trip) -> None:
     if not trip.payments:
         print("No payments recorded yet.")
         return
-    print("\n" + "=" * 50, "SETTLEMENT SUMMARY", "=" * 50,  sep='\n')
+    print("\n" + "=" * 50, "Settletment Summary", "=" * 50,  sep='\n')
 
     avg_per_person = trip.calculate_balances()
     total_spent = sum(p.amount for p in trip.payments)
 
     print(f"\nTotal spent: ${total_spent:.2f}", f"Per person (if all shared): ${avg_per_person:.2f}", "\nResult:", sep='\n')
+    
+    # Build the result text for clipboard
+    result_text = f"💰 Settlement for {trip.trip_name}\n\n"
+    result_text += f"Total spent: ${total_spent:.2f}\n"
+    result_text += f"Per person (if all shared): ${avg_per_person:.2f}\n\n"
+    result_text += "Balances:\n"
+    
     for name, member in trip.members.items():
         if member.balance > 0.01:
             print(f"    {name}: ${member.balance:.2f} (is owed)")
+            result_text += f"  {name}: ${member.balance:.2f} (is owed)\n"
         elif member.balance < -0.01:
             print(f"    {name}: ${member.balance:.2f} (owes)")
+            result_text += f"  {name}: ${abs(member.balance):.2f} (owes)\n"
         else:
             print(f"    {name}: $0.00 (settled)")
+            result_text += f"  {name}: $0.00 (settled)\n"
+    
+    balance_list = trip.get_balance_list()
+    final_balances, settlements = calculate_settlements(balance_list)
+
+    print()
+    summary = format_settlement_summary(final_balances, settlements)
+    print(summary)
+    print(f"\nTotal transactions needed: {len(settlements)}\n")
+    
+    # Add settlements to clipboard text
+    result_text += "\nRequired Transactions:\n"
+    for s in settlements:
+        result_text += f"  {s['debtor']} → {s['creditor']}: ${s['amount']:.2f}\n"
+    result_text += f"\nTotal transactions: {len(settlements)}"
+    
+    # Copy to clipboard
+    copy_choice = valid_input("\nCopy result to clipboard? (y/n): ", allow_empty=True).lower()
+    if copy_choice == 'y':
+        try:
+            pyperclip.copy(result_text)
+            print("✅ Copied to clipboard!")
+        except Exception as e:
+            print(f"Failed to copy: {e}")
+    print()
     
 
     balance_list = trip.get_balance_list()
@@ -141,8 +176,6 @@ def handle_settlement(trip) -> None:
 
     print()
     print(format_settlement_summary(final_balances, settlements))
-    # print(f"\nTotal transactions needed: {len(settlements)}\n")
-
 
 
 def main():

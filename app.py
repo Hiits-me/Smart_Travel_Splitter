@@ -17,6 +17,8 @@ st.set_page_config(
 # Initialize session state
 if 'trip' not in st.session_state:
     st.session_state.trip = None
+if 'form_key' not in st.session_state:
+    st.session_state.form_key = 0
 
 # Custom CSS for better styling
 st.markdown("""
@@ -32,19 +34,30 @@ st.markdown("""
         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     }
     
-    /* Button styling */
-    .stButton button {
+    /* Button styling - stronger override for primary buttons */
+    .stButton button, .stFormSubmitButton button {
         width: 100%;
-        background-color: #5a7a9e;
-        color: white;
-        border: none;
+        background-color: #5a7a9e !important;
+        color: white !important;
+        border: none !important;
         border-radius: 8px;
         transition: all 0.3s ease;
     }
     
-    .stButton button:hover {
-        background-color: #4a6a8e;
+    .stButton button:hover, .stFormSubmitButton button:hover {
+        background-color: #4a6a8e !important;
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+    
+    /* Override Streamlit's primary button red color */
+    .stFormSubmitButton button[kind="primary"] {
+        background-color: #5a7a9e !important;
+        border-color: #5a7a9e !important;
+    }
+    
+    .stFormSubmitButton button[kind="primary"]:hover {
+        background-color: #4a6a8e !important;
+        border-color: #4a6a8e !important;
     }
     
     /* Payment cards with soft, muted colors */
@@ -145,11 +158,12 @@ else:
         
         with col1:
             st.subheader("Add Member")
-            new_member = st.text_input("Member Name", key="new_member", placeholder="e.g., Alice")
+            new_member = st.text_input("Member Name", key=f"new_member_{st.session_state.form_key}", placeholder="e.g., Alice")
             if st.button("Add Member", type="primary"):
                 if new_member.strip():
                     if trip.add_member(new_member.strip()):
                         st.success(f"✅ {new_member} added!")
+                        st.session_state.form_key += 1  # Increment to refresh form
                         st.rerun()
                 else:
                     st.error("Please enter a name")
@@ -189,7 +203,7 @@ else:
                     key="involved_members"
                 )
             
-            with st.form("payment_form", clear_on_submit=True):
+            with st.form(f"payment_form_{st.session_state.form_key}", clear_on_submit=True):
                 col1, col2 = st.columns(2)
                 
                 with col1:
@@ -198,14 +212,17 @@ else:
                 with col2:
                     description = st.text_input("Description", placeholder="e.g., Hotel booking")
                 
-                amount = st.number_input("Amount ($)", min_value=0.01, step=0.01, format="%.2f")
+                amount = st.number_input("Amount ($)", value=0.01, step=0.01, format="%.2f", key=f"amount_{st.session_state.form_key}")
                 
                 submitted = st.form_submit_button("Add Payment", type="primary")
                 
                 if submitted:
                     try:
-                        # Validate and add payment
-                        if split_specific and not involved:
+                        # Validate amount first
+                        if amount <= 0:
+                            st.error("❌ Amount must be greater than $0!")
+                        # Validate members selection
+                        elif split_specific and not involved:
                             st.error("Please select at least one member to split with!")
                         else:
                             # Ensure payer is included if specific split
@@ -214,6 +231,7 @@ else:
                             
                             trip.add_payment(payer, amount, description, involved if split_specific else None)
                             st.success(f"✅ Payment recorded: {payer} paid ${amount:.2f}")
+                            st.session_state.form_key += 1  # Increment to refresh form
                             st.rerun()
                     except ValueError as e:
                         st.error(f"Error: {e}")
@@ -247,37 +265,52 @@ else:
             
             # Show all payments with actions
             for payment in trip.payments:
-                with st.expander(f"#{payment.id}: {payment.payer_name} - ${payment.amount:.2f} - {payment.description}"):
-                    col1, col2, col3 = st.columns([2, 2, 1])
+                involved_str = ", ".join(payment.involved_members) if payment.involved_members else "all"
+                with st.expander(f"#{payment.id}: {payment.payer_name} - ${payment.amount:.2f} - {payment.description} (split: {involved_str})"):
+                    col1, col2 = st.columns([2, 2])
                     
                     with col1:
                         new_amount = st.number_input(
                             "New Amount",
-                            min_value=0.01,
                             value=float(payment.amount),
                             step=0.01,
-                            key=f"amount_{payment.id}"
+                            key=f"edit_amount_{payment.id}"
                         )
                     
                     with col2:
                         new_desc = st.text_input(
                             "New Description",
                             value=payment.description,
-                            key=f"desc_{payment.id}"
+                            key=f"edit_desc_{payment.id}"
                         )
                     
-                    with col3:
-                        st.write("")  # Spacing
-                        st.write("")  # Spacing
-                        if st.button("💾 Save", key=f"save_{payment.id}"):
-                            trip.edit_payment(payment.id, new_amount, new_desc)
-                            st.success(f"✅ Payment #{payment.id} updated!")
-                            st.rerun()
+                    # Edit involved members
+                    st.write("**Involved Members:**")
+                    new_involved = st.multiselect(
+                        "Select members involved in this expense",
+                        options=list(trip.members.keys()),
+                        default=payment.involved_members,
+                        key=f"edit_involved_{payment.id}"
+                    )
                     
-                    if st.button(f"🗑️ Delete Payment #{payment.id}", key=f"delete_{payment.id}", type="secondary"):
-                        trip.delete_payment(payment.id)
-                        st.success(f"✅ Payment #{payment.id} deleted!")
-                        st.rerun()
+                    col_save, col_delete = st.columns([1, 1])
+                    
+                    with col_save:
+                        if st.button("💾 Save Changes", key=f"save_{payment.id}", use_container_width=True):
+                            if new_amount <= 0:
+                                st.error("Amount must be greater than 0")
+                            elif not new_involved:
+                                st.error("At least one member must be involved")
+                            else:
+                                trip.edit_payment(payment.id, new_amount, new_desc, new_involved)
+                                st.success(f"✅ Payment #{payment.id} updated!")
+                                st.rerun()
+                    
+                    with col_delete:
+                        if st.button(f"🗑️ Delete", key=f"delete_{payment.id}", type="secondary", use_container_width=True):
+                            trip.delete_payment(payment.id)
+                            st.success(f"✅ Payment #{payment.id} deleted!")
+                            st.rerun()
     
     # TAB 4: Settlement
     with tab4:
@@ -324,6 +357,21 @@ else:
                 # Display settlements
                 st.subheader("💸 Required Transactions")
                 
+                # Build clipboard text
+                clipboard_text = f"💰 Settlement for {trip.trip_name}\n\n"
+                clipboard_text += f"Total spent: ${total_spent:.2f}\n"
+                clipboard_text += f"Per person (if all shared): ${avg_per_person:.2f}\n\n"
+                clipboard_text += "Balances:\n"
+                for name, member in trip.members.items():
+                    if member.balance > 0.01:
+                        clipboard_text += f"  {name}: ${member.balance:.2f} (is owed)\n"
+                    elif member.balance < -0.01:
+                        clipboard_text += f"  {name}: ${abs(member.balance):.2f} (owes)\n"
+                    else:
+                        clipboard_text += f"  {name}: $0.00 (settled)\n"
+                
+                clipboard_text += "\nRequired Transactions:\n"
+                
                 if settlements:
                     for i, s in enumerate(settlements, 1):
                         st.markdown(f"""
@@ -333,14 +381,12 @@ else:
                                 <strong>${s['amount']:.2f}</strong>
                             </div>
                         """, unsafe_allow_html=True)
+                        clipboard_text += f"  {i}. {s['debtor']} → {s['creditor']}: ${s['amount']:.2f}\n"
                     
                     st.success(f"✅ Total transactions needed: {len(settlements)}")
+                    clipboard_text += f"\nTotal transactions: {len(settlements)}"
                 else:
                     st.success("✅ Everyone is settled up!")
+                    clipboard_text += "  Everyone is settled up!"
+            
                 
-                st.divider()
-                
-                # Final balances (should be ~0)
-                with st.expander("📊 View Final Balances (Verification)"):
-                    for b in final_balances:
-                        st.write(f"{b['member_name']}: ${b['price_to_get']:.2f}")
