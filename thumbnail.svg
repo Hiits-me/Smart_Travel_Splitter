@@ -1,0 +1,102 @@
+<svg viewBox="0 0 1920 1080" xmlns="http://www.w3.org/2000/svg">
+  <!-- Purple gradient background like TipKit -->
+  <defs>
+    <linearGradient id="purpleGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#B794F6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#9F7AEA;stop-opacity:1" />
+    </linearGradient>
+    
+    <filter id="cardShadow">
+      <feDropShadow dx="0" dy="8" stdDeviation="20" flood-opacity="0.15"/>
+    </filter>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="1920" height="1080" fill="url(#purpleGradient)"/>
+
+  <image x="200" y="100" width="90" height="90" href="img.png"/>
+  
+  <!-- Main title -->
+  <text x="120" y="380" 
+        font-family="-apple-system, SF Pro Display, sans-serif" 
+        font-size="100" 
+        font-weight="700" 
+        fill="#1d1d1f" 
+        letter-spacing="-2">
+    Travel Splitter
+  </text>
+  
+  <!-- Subtitle -->
+  <text x="120" y="450" 
+        font-family="-apple-system, SF Pro Text, sans-serif" 
+        font-size="40" 
+        font-weight="400" 
+        fill="#1d1d1f" 
+        opacity="0.7">
+    Split with ease, travel in peace
+  </text>
+  
+  <!-- Simple card mockup (like TipKit's popup) -->
+  <g transform="translate(1200, 540)">
+    <!-- White card - made bigger -->
+    <rect x="-300" y="-200" width="800" height="450" rx="30" fill="white" filter="url(#cardShadow)"/>
+    
+ 
+    
+    <!-- Title -->
+    <text x="110" y="-40" 
+          font-family="-apple-system, SF Pro Display, sans-serif" 
+          font-size="56" 
+          font-weight="700" 
+          fill="#1d1d1f" 
+          text-anchor="middle">
+      Split Your Trip
+    </text>
+    
+    <!-- Description -->
+    <text x="110" y="40" 
+          font-family="-apple-system, SF Pro Text, sans-serif" 
+          font-size="28" 
+          font-weight="400" 
+          fill="#86868b" 
+          text-anchor="middle">
+      Track expenses and settle up
+    </text>
+    <text x="110" y="75" 
+          font-family="-apple-system, SF Pro Text, sans-serif" 
+          font-size="28" 
+          font-weight="400" 
+          fill="#86868b" 
+          text-anchor="middle">
+      fairly with your travel group
+    </text>
+    
+    <!-- Button -->
+    <rect x="20" y="120" width="200" height="50" rx="25" fill="#9F7AEA"/>
+    <text x="120" y="153" 
+          font-family="-apple-system, SF Pro Text, sans-serif" 
+          font-size="26" 
+          font-weight="600" 
+          fill="white" 
+          text-anchor="middle">
+      Get Started
+    </text>
+    
+    <!-- Close button (X) -->
+    <g transform="translate(260, -180)">
+      <circle cx="200" cy="20" r="16" fill="#86868b" opacity="0.1"/>
+      <line x1="194" y1="14" x2="206" y2="26" stroke="#86868b" stroke-width="2" stroke-linecap="round"/>
+      <line x1="206" y1="14" x2="194" y2="26" stroke="#86868b" stroke-width="2" stroke-linecap="round"/>
+    </g>
+  </g>
+  
+  <!-- Bottom metadata -->
+  <text x="140" y="980" 
+        font-family="-apple-system, SF Pro Text, sans-serif" 
+        font-size="30" 
+        font-weight="400" 
+        fill="#1d1d1f" 
+        opacity="0.6">
+    by Yugo Baba
+  </text>
+</svg>
